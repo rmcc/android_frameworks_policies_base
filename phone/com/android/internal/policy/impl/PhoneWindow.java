@@ -1231,7 +1231,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 Message message = mKeycodeMenuTimeoutHandler.obtainMessage(MSG_CAMERA_LONG_PRESS);
                 message.obj = event;
                 mKeycodeMenuTimeoutHandler.sendMessageDelayed(message,
-                        2000);
+                        1000);
                 return true;
 
             }
