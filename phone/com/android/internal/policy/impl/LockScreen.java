@@ -156,7 +156,10 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         final boolean configDisabled = res.getBoolean(R.bool.config_disableMenuKeyInLockScreen);
         final boolean isMonkey = SystemProperties.getBoolean("ro.monkey", false);
         final boolean fileOverride = (new File(ENABLE_MENU_KEY_FILE)).exists();
-        return !configDisabled || isMonkey || fileOverride;
+        final boolean settingOverride = (Settings.System.getInt(
+                    getContext().getContentResolver(),
+                    Settings.System.MENU_KEY_UNLOCK, 0) == 1);
+        return !configDisabled || isMonkey || fileOverride || settingOverride;
     }
 
     /**
