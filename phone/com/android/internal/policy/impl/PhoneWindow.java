@@ -45,8 +45,6 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
-import android.os.Handler;
-import android.os.Message;
 import android.telephony.TelephonyManager;
 import android.util.AndroidRuntimeException;
 import android.util.Config;
@@ -157,40 +155,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
     private SearchManager mSearchManager = null;
 
     private TelephonyManager mTelephonyManager = null;
-   
-
-    /* key repeats aren't supported by the old kernel in the ONE,
-     * so we need the old timeout handler */
-
-    static final int MSG_CAMERA_LONG_PRESS = 5;
-    static final int MSG_CAMERA_LONG_PRESS_COMPLETE = 6;
-    private boolean mKeycodeCameraTimeoutActive = false;
-    private final Handler mKeycodeMenuTimeoutHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_CAMERA_LONG_PRESS: {
-                    if (!mKeycodeCameraTimeoutActive) return;
-                    // See above.
-                    Message newMessage = Message.obtain(msg);
-                    newMessage.what = MSG_CAMERA_LONG_PRESS_COMPLETE;
-                    mKeycodeMenuTimeoutHandler.sendMessage(newMessage);
-                    break;
-                }
-                case MSG_CAMERA_LONG_PRESS_COMPLETE: {
-                    if (!mKeycodeCameraTimeoutActive) return;
-                    mKeycodeCameraTimeoutActive = false;
-                    mDecor.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                    sendCloseSystemWindows();
-                    // Broadcast an intent that the Camera button was longpressed
-                    Intent intent = new Intent(Intent.ACTION_CAMERA_BUTTON, null);
-                    intent.putExtra(Intent.EXTRA_KEY_EVENT, (KeyEvent) msg.obj);
-                    getContext().sendOrderedBroadcast(intent, null);
-                } break;
-            }
-        }
-    };
-
+    
     public PhoneWindow(Context context) {
         super(context);
         mLayoutInflater = LayoutInflater.from(context);
@@ -1209,8 +1174,6 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                         || dispatcher == null) {
                     break;
                 }
-/* Unsupported, needs key proper key repeats
- * see the forwardported mKeycodeMenuTimeoutHandler above
                 if (event.getRepeatCount() == 0) {
                     dispatcher.startTracking(event, this);
                 } else if (event.isLongPress() && dispatcher.isTracking(event)) {
@@ -1221,19 +1184,8 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                     Intent intent = new Intent(Intent.ACTION_CAMERA_BUTTON, null);
                     intent.putExtra(Intent.EXTRA_KEY_EVENT, event);
                     getContext().sendOrderedBroadcast(intent, null);
-
                 }
                 return true;
-* --- original eclair code */
-                if (event.getRepeatCount() > 0) break;
-                mKeycodeCameraTimeoutActive = true;
-                mKeycodeMenuTimeoutHandler.removeMessages(MSG_CAMERA_LONG_PRESS);
-                Message message = mKeycodeMenuTimeoutHandler.obtainMessage(MSG_CAMERA_LONG_PRESS);
-                message.obj = event;
-                mKeycodeMenuTimeoutHandler.sendMessageDelayed(message,
-                        1000);
-                return true;
-
             }
 
             case KeyEvent.KEYCODE_MENU: {
@@ -1404,18 +1356,9 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 if (getKeyguardManager().inKeyguardRestrictedInputMode()) {
                     break;
                 }
-/* Unsupported, needs key proper key repeats 
- * see the forwardported mKeycodeMenuTimeoutHandler above
                 if (event.isTracking() && !event.isCanceled()) {
                     // Add short press behavior here if desired
                 }
-                return true;
-* -- original eclair code */
-               if (event.getRepeatCount() > 0) break; // Can a key up event repeat?
-                mKeycodeMenuTimeoutHandler.removeMessages(MSG_CAMERA_LONG_PRESS);
-                if (!mKeycodeCameraTimeoutActive) break;
-                mKeycodeCameraTimeoutActive = false;
-                // Add short press behavior here if desired
                 return true;
             }
 
